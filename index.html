@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UMEED - PHC Portal</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js & Annotation Plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Animations mimicking React animate-in */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    
+    .animate-in.fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    .animate-in.zoom-in-95 { animation: zoomIn 0.3s ease-out forwards; }
+    
+    /* Ensure charts fit containers */
+    canvas { width: 100% !important; height: 100% !important; }
+  </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800">
+
+  <!-- ================= LOGIN PAGE ================= -->
+  <div id="login-view" class="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4 relative overflow-hidden">
+    <div class="absolute top-0 left-0 w-full h-96 bg-blue-600/5 -skew-y-6 transform origin-top-left z-0"></div>
+    
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border-t-[6px] border-blue-600 z-10 animate-in zoom-in-95">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+          <i data-lucide="activity" class="w-8 h-8 text-blue-600"></i>
+        </div>
+        <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">UMEED</h1>
+        <p class="text-sm text-slate-500 font-medium mt-1">Unified Monitoring for Empowered & Efficient Delivery</p>
+        <div class="mt-3 inline-block bg-slate-50 border border-slate-200 px-3 py-1 rounded-full">
+          <p class="text-[10px] text-slate-600 font-bold uppercase tracking-widest flex items-center">
+            <i data-lucide="shield-alert" class="w-3 h-3 mr-1 text-slate-400"></i> Government of India
+          </p>
+        </div>
+      </div>
+      
+      <form id="login-form" class="space-y-5">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Select Role Profile</label>
+          <select class="w-full border border-slate-300 rounded-lg px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm font-medium text-slate-700">
+            <option>PHC Admin</option>
+            <option selected>Medical Officer</option>
+            <option>Staff Nurse (ANM)</option>
+            <option>Pharmacist</option>
+            <option>Data Entry Operator (DEO)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">Govt ID / Username</label>
+          <input type="text" value="MO-PALGHAR-01" class="w-full border border-slate-300 rounded-lg px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm" />
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-sm font-semibold text-slate-700">Password</label>
+            <a href="#" class="text-xs font-bold text-blue-600 hover:text-blue-800">Forgot Password?</a>
+          </div>
+          <input type="password" value="********" class="w-full border border-slate-300 rounded-lg px-4 py-3 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm" />
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold rounded-lg px-4 py-3 mt-4 shadow-lg shadow-blue-600/30 hover:shadow-xl hover:from-blue-700 hover:to-indigo-800 transition-all active:scale-[0.98]">
+          Access Secure Portal
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP FRAME ================= -->
+  <div id="main-app" class="hidden min-h-screen bg-[#f8fafc] font-sans text-slate-800">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex-col hidden md:flex fixed h-full z-20 shadow-2xl">
+      <div class="p-6 border-b border-slate-800 flex items-center space-x-3 bg-slate-950/50">
+        <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-lg shadow-inner">
+          <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-white tracking-wide">UMEED</h1>
+          <p class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">PHC System</p>
+        </div>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto py-6">
+        <div class="px-5 mb-3 text-xs font-bold text-slate-500 uppercase tracking-wider">Core Modules</div>
+        <nav class="space-y-1.5 px-3" id="sidebar-nav">
+          <!-- Populated by JS -->
+        </nav>
+      </div>
+
+      <div class="p-4 border-t border-slate-800 bg-slate-950/30">
+        <div class="bg-slate-800 rounded-lg p-3 mb-3 flex items-center space-x-3">
+          <div class="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-white font-bold text-xs">AV</div>
+          <div class="flex-1 truncate">
+            <p class="text-xs font-bold text-white truncate">Dr. Amit Verma</p>
+            <p class="text-[10px] text-slate-400 truncate">Medical Officer</p>
+          </div>
+        </div>
+        <button onclick="logout()" class="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm text-slate-400 font-bold hover:text-white hover:bg-slate-800 rounded-lg transition-colors border border-slate-700 hover:border-slate-600">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+          <span>Secure Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col md:ml-64 min-h-screen">
+      <!-- Header -->
+      <header class="bg-white/80 backdrop-blur-md border-b border-slate-200 h-16 flex items-center justify-between px-6 sticky top-0 z-10 shadow-sm">
+        <div class="flex items-center">
+          <i data-lucide="menu" class="w-6 h-6 text-slate-600 cursor-pointer mr-4 md:hidden"></i>
+          <h1 id="header-title" class="text-lg font-bold text-slate-800 capitalize hidden sm:block">Pop. Health Analytics</h1>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+          <div class="hidden lg:flex items-center space-x-3 mr-4">
+            <span class="flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shadow-sm">
+              <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse"></div> AB-PMJAY Active
+            </span>
+          </div>
+          <button class="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition">
+            <i data-lucide="bell" class="w-5 h-5"></i>
+            <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Workspace -->
+      <main class="flex-1 p-6 md:p-8 overflow-x-hidden">
+        <div class="max-w-[1400px] mx-auto" id="views-container">
+          <!-- Content populated here -->
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // --- MOCK DATA ---
+    const dashboardStats = [
+      { title: "Total Population", value: "42,500", change: "+2.4%", isUp: true, icon: "users", color: "text-blue-600", bg: "bg-blue-100" },
+      { title: "Registered Families", value: "8,140", change: "+1.2%", isUp: true, icon: "home", color: "text-indigo-600", bg: "bg-indigo-100" },
+      { title: "Pregnant Women", value: "342", change: "+5.1%", isUp: true, icon: "baby", color: "text-pink-600", bg: "bg-pink-100" },
+      { title: "High-Risk Pregnancies", value: "28", change: "-2.0%", isUp: false, icon: "alert-triangle", color: "text-red-600", bg: "bg-red-100" },
+      { title: "Children (0-5 yrs)", value: "3,850", change: "+0.5%", isUp: true, icon: "baby", color: "text-teal-600", bg: "bg-teal-100" },
+      { title: "Chronic Patients", value: "1,240", change: "+8.4%", isUp: true, icon: "heart-pulse", color: "text-orange-600", bg: "bg-orange-100" },
+      { title: "Immunization %", value: "92.4%", change: "+1.1%", isUp: true, icon: "shield-alert", color: "text-green-600", bg: "bg-green-100" },
+      { title: "Low Stock Alerts", value: "12", change: "-4.0%", isUp: false, icon: "pill", color: "text-yellow-600", bg: "bg-yellow-100" },
+    ];
+
+    const vitalsTrendData = [
+      { month: 'Jan', bpSys: 122, bpDia: 80, hbAvg: 11.2 },
+      { month: 'Feb', bpSys: 124, bpDia: 82, hbAvg: 11.5 },
+      { month: 'Mar', bpSys: 128, bpDia: 85, hbAvg: 11.4 },
+      { month: 'Apr', bpSys: 132, bpDia: 88, hbAvg: 11.1 },
+      { month: 'May', bpSys: 130, bpDia: 86, hbAvg: 10.8 },
+      { month: 'Jun', bpSys: 125, bpDia: 82, hbAvg: 11.6 },
+    ];
+
+    const villageData = [
+      { id: 'V01', name: 'Palghar', pop: 4500, households: 980, riskScore: 85, status: 'Red', issues: 'High Dengue, Low Immunization', hbAvg: 10.2 },
+      { id: 'V02', name: 'Wada', pop: 3200, households: 710, riskScore: 65, status: 'Yellow', issues: 'Maternal Anaemia', hbAvg: 11.1 },
+      { id: 'V03', name: 'Dahanu', pop: 5100, households: 1120, riskScore: 40, status: 'Green', issues: 'Normal', hbAvg: 12.4 },
+      { id: 'V04', name: 'Talasari', pop: 2800, households: 605, riskScore: 92, status: 'Red', issues: 'Malnutrition Spike, High BP', hbAvg: 9.8 },
+      { id: 'V05', name: 'Jawhar', pop: 3900, households: 840, riskScore: 70, status: 'Yellow', issues: 'Diabetes Increase', hbAvg: 11.5 },
+    ];
+
+    const ashaWorkers = [
+      { id: 'ASHA-001', name: 'Sunita Sharma', village: 'Palghar', score: 92, visits: '95%', incentive: '₹4,500', gps: '19.6967° N, 72.7699° E', time: '10:45 AM' },
+      { id: 'ASHA-002', name: 'Kavita Patil', village: 'Wada', score: 78, visits: '82%', incentive: '₹3,800', gps: '19.6510° N, 73.1410° E', time: '09:30 AM' },
+      { id: 'ASHA-003', name: 'Priya Desai', village: 'Dahanu', score: 98, visits: '100%', incentive: '₹5,200', gps: '19.9911° N, 72.7397° E', time: '11:15 AM' },
+      { id: 'ASHA-004', name: 'Meena Jadhav', village: 'Talasari', score: 65, visits: '70%', incentive: '₹2,900', gps: '20.1250° N, 72.9030° E', time: '02:20 PM' },
+    ];
+
+    const inventoryData = [
+      { name: 'Paracetamol 500mg', stock: 12500, threshold: 5000, status: 'Healthy', expiry: '2025-10' },
+      { name: 'Amoxicillin 250mg', stock: 800, threshold: 2000, status: 'Low Stock', expiry: '2024-12' },
+      { name: 'Iron Folic Acid', stock: 15000, threshold: 10000, status: 'Healthy', expiry: '2026-05' },
+      { name: 'Metformin 500mg', stock: 450, threshold: 1500, status: 'Low Stock', expiry: '2025-01' },
+    ];
+
+    const navItems = [
+      { id: 'dashboard', label: 'Main Dashboard', icon: 'home' },
+      { id: 'vitals', label: 'Pop. Health Analytics', icon: 'activity' },
+      { id: 'village', label: 'Village Analytics', icon: 'map' },
+      { id: 'asha', label: 'ASHA Management', icon: 'users' },
+      { id: 'mch', label: 'Maternal & Child (MCH)', icon: 'baby' },
+      { id: 'inventory', label: 'Medicine Inventory', icon: 'pill' },
+      { id: 'reports', label: 'Govt Reports Sync', icon: 'file-text' },
+    ];
+
+    // Chart Instances
+    let charts = {};
+
+    // --- HTML GENERATORS ---
+
+    function getBadgeHTML(status) {
+      const styles = {
+        'Red': 'bg-red-100 text-red-700 border-red-200',
+        'Yellow': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        'Green': 'bg-green-100 text-green-700 border-green-200',
+        'Low Stock': 'bg-red-100 text-red-700 border-red-200',
+        'Healthy': 'bg-green-100 text-green-700 border-green-200',
+        'Synced': 'bg-green-100 text-green-700 border-green-200',
+        'Pending': 'bg-yellow-100 text-yellow-700 border-yellow-200',
+        'Failed': 'bg-red-100 text-red-700 border-red-200',
+      };
+      const cls = styles[status] || 'bg-slate-100 text-slate-700';
+      return `<span class="px-2.5 py-1 rounded-full text-xs font-bold border ${cls}">${status}</span>`;
+    }
+
+    const views = {
+      dashboard: `
+        <div class="space-y-6 animate-in fade-in">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${dashboardStats.map(s => `
+              <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex items-start space-x-4 hover:shadow-md transition-shadow relative overflow-hidden">
+                <div class="p-3 rounded-xl ${s.bg} z-10"><i data-lucide="${s.icon}" class="w-6 h-6 ${s.color}"></i></div>
+                <div class="z-10 flex-1">
+                  <p class="text-sm font-semibold text-slate-500 truncate">${s.title}</p>
+                  <div class="flex items-end justify-between mt-1">
+                    <h3 class="text-2xl font-bold text-slate-800">${s.value}</h3>
+                    <div class="flex items-center text-xs font-bold ${s.isUp ? 'text-green-600' : 'text-red-600'}">
+                      <i data-lucide="${s.isUp ? 'trending-up' : 'trending-down'}" class="w-3 h-3 mr-1"></i>${s.change}
+                    </div>
+                  </div>
+                </div>
+                <div class="absolute -bottom-4 -right-4 w-16 h-16 rounded-full opacity-10 ${s.bg}"></div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+              <h3 class="text-lg font-bold text-slate-800 mb-4">Monthly ANC Visits Trend</h3>
+              <div class="h-64 relative w-full"><canvas id="chart-anc"></canvas></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+              <h3 class="text-lg font-bold text-slate-800 mb-4">Immunization Coverage</h3>
+              <div class="h-64 relative w-full"><canvas id="chart-imm"></canvas></div>
+            </div>
+          </div>
+        </div>
+      `,
+      vitals: `
+        <div class="space-y-6 animate-in fade-in">
+          <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-xl text-white shadow-lg">
+            <div>
+              <h2 class="text-2xl font-bold flex items-center"><i data-lucide="activity" class="w-6 h-6 mr-3 text-blue-400"></i> Population Health Intelligence</h2>
+              <p class="text-slate-400 mt-1 text-sm">Real-time health index tracking and AI predictive analytics across 24 villages.</p>
+            </div>
+            <div class="mt-4 md:mt-0 flex space-x-3">
+              <div class="bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/5">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Overall Health Index</p>
+                <p class="text-2xl font-bold text-emerald-400">72.4</p>
+              </div>
+              <div class="bg-white/10 px-4 py-2 rounded-lg backdrop-blur-sm border border-white/5">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Critical Zones</p>
+                <p class="text-2xl font-bold text-rose-400">02</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 overflow-hidden border border-slate-200 shadow-sm bg-white rounded-2xl">
+              <div class="p-6 pb-2 flex justify-between items-center">
+                <h3 class="text-[17px] font-bold text-slate-800 flex items-center">
+                  <i data-lucide="trending-up" class="w-5 h-5 mr-2 text-blue-500"></i> Average Blood Pressure Trend
+                </h3>
+                <select class="text-sm bg-slate-50 border border-slate-200 text-slate-600 font-medium rounded-md px-3 py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer">
+                  <option>Last 6 Months</option>
+                  <option>Last 12 Months</option>
+                </select>
+              </div>
+              <div class="h-[320px] p-6 pt-2 relative w-full"><canvas id="chart-bp"></canvas></div>
+            </div>
+
+            <div class="bg-[#f4f5f7] rounded-2xl p-5 border border-slate-200">
+              <h3 class="text-lg font-bold text-slate-800 mb-5 flex items-center leading-tight">
+                <i data-lucide="cloud-lightning" class="w-5 h-5 mr-2 text-indigo-500"></i> 
+                AI Risk<br/>Predictions
+              </h3>
+              <div class="space-y-4">
+                <div class="bg-[#fcecec] rounded-xl p-4 border-l-[3px] border-red-400 relative overflow-hidden">
+                  <div class="absolute top-4 left-3 w-1.5 h-1.5 rounded-full bg-red-400"></div>
+                  <div class="pl-4">
+                    <h4 class="text-[15px] font-bold text-[#b93232] leading-tight mb-2">Spike in Hypertension Predicted</h4>
+                    <p class="text-[13px] text-[#b93232]/80 leading-relaxed">Talasari village shows a 15% upward trend in average BP over 3 weeks. Recommend screening camp.</p>
+                  </div>
+                </div>
+                <div class="bg-[#f5f1e1] rounded-xl p-4 border-l-[3px] border-yellow-500 relative overflow-hidden">
+                  <div class="absolute top-4 left-3 w-1.5 h-1.5 rounded-full bg-yellow-600"></div>
+                  <div class="pl-4">
+                    <h4 class="text-[15px] font-bold text-[#8a6a24] leading-tight mb-2">Malnutrition Risk (0-5 yrs)</h4>
+                    <p class="text-[13px] text-[#8a6a24]/80 leading-relaxed">Wada sector reporting 8% drop in average child BMI. Iron/Folic acid stock is sufficient for intervention.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-t-4 border-teal-500">
+              <h4 class="font-bold text-slate-700 flex items-center mb-4"><i data-lucide="scale" class="w-4 h-4 mr-2 text-teal-500"></i> BMI & Malnutrition</h4>
+              <div class="space-y-3">
+                <div>
+                  <div class="flex justify-between text-sm mb-1"><span class="text-slate-500">Adult Obesity</span><span class="font-bold text-slate-700">14%</span></div>
+                  <div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-red-400 h-2 rounded-full" style="width: 14%"></div></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-sm mb-1"><span class="text-slate-500">Child Underweight</span><span class="font-bold text-slate-700">8%</span></div>
+                  <div class="w-full bg-slate-100 rounded-full h-2"><div class="bg-yellow-400 h-2 rounded-full" style="width: 8%"></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-t-4 border-rose-500">
+              <h4 class="font-bold text-slate-700 flex items-center mb-4"><i data-lucide="droplet" class="w-4 h-4 mr-2 text-rose-500"></i> Haemoglobin Tracker</h4>
+              <div class="flex items-end space-x-4">
+                <div class="flex-1">
+                  <p class="text-3xl font-bold text-rose-600">10.8 <span class="text-sm text-slate-500 font-normal">g/dL</span></p>
+                  <p class="text-xs text-slate-500 mt-1">Average in pregnant women</p>
+                </div>
+                <div class="w-16 h-16 rounded-full border-4 border-rose-100 flex items-center justify-center border-t-rose-500">
+                  <span class="text-sm font-bold text-rose-600">-2%</span>
+                </div>
+              </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-t-4 border-orange-500">
+              <h4 class="font-bold text-slate-700 flex items-center mb-4"><i data-lucide="thermometer" class="w-4 h-4 mr-2 text-orange-500"></i> Fever/Outbreak Alerts</h4>
+              <div class="bg-orange-50 rounded-lg p-3 border border-orange-100">
+                <p class="text-sm font-bold text-orange-800">Possible Viral Spike Detected</p>
+                <p class="text-xs text-orange-600 mt-1">12% increase in paracetamol dispensation in Dahanu cluster.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      `,
+      village: `
+        <div class="space-y-6 animate-in fade-in">
+          <div class="flex justify-between items-center bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center">
+              <i data-lucide="map" class="w-6 h-6 mr-2 text-indigo-600"></i> Village Analytics & Management
+            </h2>
+            <div class="flex space-x-3">
+              <button class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-indigo-100 flex items-center transition-colors">
+                <i data-lucide="download" class="w-4 h-4 mr-2"></i> Export Village Data
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+              <p class="text-sm font-semibold text-slate-500">Total Villages</p>
+              <p class="text-2xl font-bold text-blue-600 mt-1">24</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-red-500 bg-red-50/30 hover:shadow-md transition-shadow">
+              <p class="text-sm font-semibold text-red-700">Critical Zones</p>
+              <p class="text-2xl font-bold text-red-600 mt-1">2</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-yellow-500 bg-yellow-50/30 hover:shadow-md transition-shadow">
+              <p class="text-sm font-semibold text-yellow-700">Moderate Risk</p>
+              <p class="text-2xl font-bold text-yellow-600 mt-1">8</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-l-4 border-green-500 bg-green-50/30 hover:shadow-md transition-shadow">
+              <p class="text-sm font-semibold text-green-700">Healthy Zones</p>
+              <p class="text-2xl font-bold text-green-600 mt-1">14</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+              <h3 class="text-lg font-bold text-slate-800 mb-4">Village Health Risk Score Comparison</h3>
+              <div class="h-64 relative w-full"><canvas id="chart-village-risk"></canvas></div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+              <h3 class="text-lg font-bold text-slate-800 mb-4">Average Haemoglobin Levels by Village</h3>
+              <div class="h-64 relative w-full"><canvas id="chart-village-hb"></canvas></div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+              <h3 class="text-lg font-bold text-slate-800 flex items-center">Detailed Village Demographics</h3>
+              <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
+                <input type="text" placeholder="Search village..." class="pl-9 pr-4 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+              </div>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead>
+                  <tr class="bg-white text-slate-500 text-xs uppercase tracking-wider border-b">
+                    <th class="p-4 font-semibold">Village Data</th>
+                    <th class="p-4 font-semibold">Population</th>
+                    <th class="p-4 font-semibold">Health Index Score</th>
+                    <th class="p-4 font-semibold">Risk Status</th>
+                    <th class="p-4 font-semibold">Primary Health Issues</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${villageData.map(v => `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                      <td class="p-4">
+                        <p class="font-bold text-slate-800">${v.name}</p>
+                        <p class="text-xs text-slate-500">${v.households} households</p>
+                      </td>
+                      <td class="p-4 text-sm text-slate-600 font-medium">${v.pop.toLocaleString()}</td>
+                      <td class="p-4">
+                        <div class="flex items-center space-x-2">
+                          <div class="w-24 bg-slate-200 rounded-full h-2">
+                            <div class="h-2 rounded-full ${v.riskScore > 80 ? 'bg-red-500' : v.riskScore > 60 ? 'bg-yellow-500' : 'bg-green-500'}" style="width: ${v.riskScore}%"></div>
+                          </div>
+                          <span class="text-sm font-bold text-slate-700">${v.riskScore}</span>
+                        </div>
+                      </td>
+                      <td class="p-4">${getBadgeHTML(v.status)}</td>
+                      <td class="p-4 text-sm text-slate-600">${v.issues}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `,
+      asha: `
+        <div class="space-y-6 animate-in fade-in">
+          <div class="flex justify-between items-center bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center"><i data-lucide="users" class="w-6 h-6 mr-2 text-indigo-600"></i> ASHA Worker Management</h2>
+            <div class="flex space-x-3">
+              <button class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-semibold text-sm hover:bg-indigo-100 flex items-center">
+                <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i> Live Tracking Map
+              </button>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b">
+                    <th class="p-4 font-semibold">Rank / Profile</th>
+                    <th class="p-4 font-semibold">Assigned Territory</th>
+                    <th class="p-4 font-semibold">Visit Completion</th>
+                    <th class="p-4 font-semibold">Performance Score</th>
+                    <th class="p-4 font-semibold">Incentive Accrued</th>
+                    <th class="p-4 font-semibold">Last GPS Ping</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${ashaWorkers.sort((a,b) => b.score - a.score).map((w, i) => `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                      <td class="p-4 flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${i === 0 ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' : 'bg-slate-100 text-slate-500'}">
+                          #${i + 1}
+                        </div>
+                        <div>
+                          <p class="font-bold text-slate-800">${w.name}</p>
+                          <p class="text-xs text-slate-500">${w.id}</p>
+                        </div>
+                      </td>
+                      <td class="p-4 text-sm text-slate-700 font-medium">${w.village}</td>
+                      <td class="p-4">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${parseInt(w.visits) >= 90 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}">
+                          ${w.visits} Target
+                        </span>
+                      </td>
+                      <td class="p-4 font-bold text-slate-800">${w.score}/100</td>
+                      <td class="p-4 text-emerald-600 font-bold">${w.incentive}</td>
+                      <td class="p-4">
+                        <div class="text-xs text-slate-500 flex flex-col space-y-1">
+                          <span class="flex items-center"><i data-lucide="map-pin" class="w-3 h-3 mr-1 text-slate-400"></i> ${w.gps}</span>
+                          <span class="flex items-center"><i data-lucide="clock" class="w-3 h-3 mr-1 text-slate-400"></i> ${w.time}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      `,
+      mch: `
+        <div class="space-y-6 animate-in fade-in">
+          <h2 class="text-2xl font-bold text-slate-800 flex items-center"><i data-lucide="baby" class="w-6 h-6 mr-2 text-pink-500"></i> Maternal & Child Health (MCH) Registry</h2>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-t-4 border-pink-500">
+              <p class="text-sm text-slate-500 font-semibold">Active ANC Registrations</p>
+              <p class="text-3xl font-bold text-pink-600 mt-1">142</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-t-4 border-red-500 bg-red-50/30">
+              <p class="text-sm text-red-700 font-semibold">High-Risk Tagged</p>
+              <p class="text-3xl font-bold text-red-600 mt-1">28</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-t-4 border-indigo-500">
+              <p class="text-sm text-slate-500 font-semibold">Expected Deliveries (30d)</p>
+              <p class="text-3xl font-bold text-indigo-600 mt-1">45</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 border-t-4 border-orange-500">
+              <p class="text-sm text-slate-500 font-semibold">Missed Vaccines Alert</p>
+              <p class="text-3xl font-bold text-orange-600 mt-1">14</p>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-lg font-bold text-slate-800">Delivery Due Date Alert System</h3>
+              <button class="text-sm bg-slate-100 text-slate-600 px-3 py-1 rounded hover:bg-slate-200">Filter: Next 7 Days</button>
+            </div>
+            <div class="space-y-3">
+              ${[1,2,3].map((_,i) => `
+                <div class="flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-lg">
+                  <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 font-bold">W</div>
+                    <div>
+                      <p class="font-bold text-slate-800">Radha K. (Age 24)</p>
+                      <p class="text-xs text-slate-500">Gravida 2 • Palghar Village • High Risk: Severe Anaemia</p>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm font-bold text-red-600 flex items-center"><i data-lucide="calendar" class="w-4 h-4 mr-1"></i> Due in ${i*2 + 1} days</p>
+                    <button class="text-xs text-blue-600 mt-1 hover:underline">Notify Ambulance</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `,
+      inventory: `
+        <div class="space-y-6 animate-in fade-in">
+          <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-bold text-slate-800 flex items-center"><i data-lucide="pill" class="w-6 h-6 mr-2 text-blue-600"></i> Medicine & Inventory Management</h2>
+            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-blue-700 flex items-center">
+              <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i> Request Stock Replenishment
+            </button>
+          </div>
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <table class="w-full text-left">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b">
+                  <th class="p-4 font-semibold">Medicine Name</th>
+                  <th class="p-4 font-semibold">Current Stock</th>
+                  <th class="p-4 font-semibold">Threshold Limit</th>
+                  <th class="p-4 font-semibold">Status</th>
+                  <th class="p-4 font-semibold">Earliest Expiry</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                ${inventoryData.map(item => `
+                  <tr class="hover:bg-slate-50">
+                    <td class="p-4 font-bold text-slate-800">${item.name}</td>
+                    <td class="p-4 text-slate-700 font-medium">${item.stock.toLocaleString()} units</td>
+                    <td class="p-4 text-slate-500 text-sm">${item.threshold.toLocaleString()} units</td>
+                    <td class="p-4">${getBadgeHTML(item.status)}</td>
+                    <td class="p-4 text-sm text-slate-600">${item.expiry}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `,
+      reports: `
+        <div class="space-y-6 animate-in fade-in">
+          <h2 class="text-2xl font-bold text-slate-800 flex items-center"><i data-lucide="file-text" class="w-6 h-6 mr-2 text-slate-600"></i> Reports & Govt Integration</h2>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 text-center border-green-200 bg-green-50/30">
+              <i data-lucide="check-circle" class="w-10 h-10 text-green-500 mx-auto mb-3"></i>
+              <h3 class="font-bold text-slate-800">RCH Portal Sync</h3>
+              <p class="text-sm text-slate-500 mt-1 mb-4">Maternal & Child data successfully uploaded.</p>
+              ${getBadgeHTML('Synced')}
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 text-center border-green-200 bg-green-50/30">
+              <i data-lucide="check-circle" class="w-10 h-10 text-green-500 mx-auto mb-3"></i>
+              <h3 class="font-bold text-slate-800">Ayushman Bharat</h3>
+              <p class="text-sm text-slate-500 mt-1 mb-4">ABHA ID creation logs synchronized.</p>
+              ${getBadgeHTML('Synced')}
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 text-center border-red-200 bg-red-50/30">
+              <i data-lucide="alert-triangle" class="w-10 h-10 text-red-500 mx-auto mb-3"></i>
+              <h3 class="font-bold text-slate-800">Birth & Death Registry</h3>
+              <p class="text-sm text-slate-500 mt-1 mb-4">Sync failed at 02:00 AM due to network error.</p>
+              ${getBadgeHTML('Failed')}
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center bg-slate-50 border-dashed border-2">
+            <i data-lucide="file-text" class="w-12 h-12 text-slate-300 mx-auto mb-3"></i>
+            <h3 class="text-lg font-bold text-slate-700">Monthly PHC Report Auto-Generator</h3>
+            <p class="text-slate-500 text-sm max-w-md mx-auto mt-2">Generate comprehensive state-compliant PDF reports including all demographics, vitals, MCH data, and inventory logs.</p>
+            <button class="mt-6 bg-blue-600 text-white px-6 py-2.5 rounded-lg shadow-md hover:bg-blue-700 transition font-bold flex items-center mx-auto">
+              <i data-lucide="download" class="w-4 h-4 mr-2"></i> Download June 2026 Report (PDF)
+            </button>
+          </div>
+        </div>
+      `
+    };
+
+    // --- INITIALIZATION ---
+
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      buildSidebar();
+      
+      document.getElementById("login-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        document.getElementById("login-view").classList.add("hidden");
+        document.getElementById("main-app").classList.remove("hidden");
+        setTab("vitals"); // Default tab
+      });
+    });
+
+    function logout() {
+      document.getElementById("main-app").classList.add("hidden");
+      document.getElementById("login-view").classList.remove("hidden");
+    }
+
+    function buildSidebar() {
+      const container = document.getElementById("sidebar-nav");
+      container.innerHTML = navItems.map(item => `
+        <button id="nav-${item.id}" onclick="setTab('${item.id}')" class="sidebar-btn w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white">
+          <i data-lucide="${item.icon}" class="nav-icon w-5 h-5 text-slate-500"></i>
+          <span>${item.label}</span>
+          <i data-lucide="chevron-right" class="nav-chevron w-4 h-4 ml-auto opacity-70 hidden"></i>
+        </button>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    function setTab(tabId) {
+      // 1. Update Sidebar Active States
+      document.querySelectorAll(".sidebar-btn").forEach(btn => {
+        btn.classList.remove("bg-blue-600", "text-white", "shadow-lg", "shadow-blue-900/40");
+        btn.classList.add("text-slate-400", "hover:bg-slate-800", "hover:text-white");
+        btn.querySelector(".nav-icon").classList.replace("text-white", "text-slate-500");
+        btn.querySelector(".nav-chevron").classList.add("hidden");
+      });
+
+      const activeBtn = document.getElementById(`nav-${tabId}`);
+      if(activeBtn) {
+        activeBtn.classList.remove("text-slate-400", "hover:bg-slate-800", "hover:text-white");
+        activeBtn.classList.add("bg-blue-600", "text-white", "shadow-lg", "shadow-blue-900/40");
+        activeBtn.querySelector(".nav-icon").classList.replace("text-slate-500", "text-white");
+        activeBtn.querySelector(".nav-chevron").classList.remove("hidden");
+      }
+
+      // 2. Update Header
+      const activeItem = navItems.find(i => i.id === tabId);
+      if(activeItem) document.getElementById("header-title").innerText = activeItem.label;
+
+      // 3. Render HTML
+      document.getElementById("views-container").innerHTML = views[tabId] || '<div class="p-10 text-center text-slate-400">Content not available.</div>';
+      lucide.createIcons();
+
+      // 4. Render Charts (Requires small delay for DOM to calculate canvas sizing)
+      setTimeout(() => {
+        Object.values(charts).forEach(chart => chart.destroy()); // Clear old charts
+        charts = {};
+        if (tabId === 'dashboard') initDashboardCharts();
+        if (tabId === 'vitals') initVitalsCharts();
+        if (tabId === 'village') initVillageCharts();
+      }, 50);
+    }
+
+    // --- CHART.JS CONFIGURATIONS ---
+
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.color = "#64748b";
+    const gridConfig = { color: "#f1f5f9", drawBorder: false, borderDash: [3, 3] };
+
+    function initDashboardCharts() {
+      // ANC Visits Area Chart
+      const ctxAnc = document.getElementById('chart-anc');
+      if (ctxAnc) {
+        let gradient = ctxAnc.getContext('2d').createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, 'rgba(219, 39, 119, 0.3)');
+        gradient.addColorStop(1, 'rgba(219, 39, 119, 0)');
+        
+        charts.anc = new Chart(ctxAnc, {
+          type: 'line',
+          data: {
+            labels: vitalsTrendData.map(d => d.month),
+            datasets: [{
+              label: 'ANC Visits', data: vitalsTrendData.map(d => d.bpSys), // Reusing data structurally
+              borderColor: '#db2777', backgroundColor: gradient, borderWidth: 2, fill: true, tension: 0.4
+            }]
+          },
+          options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: gridConfig } } }
+        });
+      }
+
+      // Immunization Bar Chart
+      const ctxImm = document.getElementById('chart-imm');
+      if (ctxImm) {
+        charts.imm = new Chart(ctxImm, {
+          type: 'bar',
+          data: {
+            labels: ['BCG', 'Polio', 'DPT', 'Measles'],
+            datasets: [{
+              label: 'Coverage %', data: [98, 95, 88, 85],
+              backgroundColor: '#14b8a6', borderRadius: { topLeft: 4, topRight: 4 }, barPercentage: 0.5
+            }]
+          },
+          options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: gridConfig } } }
+        });
+      }
+    }
+
+    function initVitalsCharts() {
+      const ctxBp = document.getElementById('chart-bp');
+      if (ctxBp) {
+        charts.bp = new Chart(ctxBp, {
+          type: 'line',
+          data: {
+            labels: vitalsTrendData.map(d => d.month),
+            datasets: [
+              { label: 'Systolic (mmHg)', data: vitalsTrendData.map(d => d.bpSys), borderColor: '#ef4444', borderWidth: 2.5, pointBackgroundColor: 'white', pointBorderColor: '#ef4444', pointBorderWidth: 2, pointRadius: 5 },
+              { label: 'Diastolic (mmHg)', data: vitalsTrendData.map(d => d.bpDia), borderColor: '#3b82f6', borderWidth: 2.5, pointBackgroundColor: 'white', pointBorderColor: '#3b82f6', pointBorderWidth: 2, pointRadius: 5 }
+            ]
+          },
+          options: {
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+              annotation: {
+                annotations: {
+                  highBp: { type: 'line', yMin: 140, yMax: 140, borderColor: '#ef4444', borderWidth: 1, borderDash: [4, 4], label: { display: true, content: 'High BP Threshold', position: 'start', backgroundColor: 'transparent', color: '#ef4444', font: {size: 11, weight: 500} } },
+                  normalBp: { type: 'line', yMin: 120, yMax: 120, borderColor: '#22c55e', borderWidth: 1, borderDash: [4, 4] }
+                }
+              }
+            },
+            scales: { x: { grid: { display: false } }, y: { min: 60, max: 160, ticks: { stepSize: 25 }, grid: gridConfig } }
+          }
+        });
+      }
+    }
+
+    function initVillageCharts() {
+      const ctxRisk = document.getElementById('chart-village-risk');
+      if (ctxRisk) {
+        charts.villageRisk = new Chart(ctxRisk, {
+          type: 'bar',
+          data: {
+            labels: villageData.map(v => v.name),
+            datasets: [{
+              label: 'Health Risk Score',
+              data: villageData.map(v => v.riskScore),
+              backgroundColor: villageData.map(v => v.riskScore > 80 ? '#ef4444' : v.riskScore > 60 ? '#f59e0b' : '#10b981'),
+              borderRadius: { topLeft: 4, topRight: 4 }, barPercentage: 0.6
+            }]
+          },
+          options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { min: 0, max: 100, grid: gridConfig } } }
+        });
+      }
+
+      const ctxHb = document.getElementById('chart-village-hb');
+      if (ctxHb) {
+        charts.villageHb = new Chart(ctxHb, {
+          type: 'line',
+          data: {
+            labels: villageData.map(v => v.name),
+            datasets: [{ label: 'Avg Hb (g/dL)', data: villageData.map(v => v.hbAvg), borderColor: '#db2777', borderWidth: 3, pointBackgroundColor: 'white', pointBorderColor: '#db2777', pointBorderWidth: 2, pointRadius: 5, tension: 0.3 }]
+          },
+          options: {
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              annotation: { annotations: { thresh: { type: 'line', yMin: 11, yMax: 11, borderColor: '#ef4444', borderWidth: 1, borderDash: [4, 4], label: { display: true, content: 'Anaemia Threshold (11 g/dL)', position: 'start', backgroundColor: 'transparent', color: '#ef4444', font: {size: 11} } } } }
+            },
+            scales: { x: { grid: { display: false } }, y: { min: 8, max: 14, grid: gridConfig } }
+          }
+        });
+      }
+    }
+  </script>
+</body>
+</html>
